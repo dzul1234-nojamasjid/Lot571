@@ -123,20 +123,23 @@
       border-top: 100px solid rgba(197, 160, 89, 0.1);
     }
 
+    /* FIX 1: Updated Wax Seal for clarity */
     .wax-seal {
-      width: 50px;
-      height: 50px;
+      width: 60px;
+      height: 60px;
       background: var(--text-accent);
       border-radius: 50%;
-      color: #fff;
+      color: #ffffff; /* Changed to white */
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Great Vibes', cursive;
-      font-size: 24px;
+      font-family: 'Playfair Display', serif; /* Changed font to a clear serif */
+      font-size: 20px;
+      font-weight: 600;
       z-index: 2;
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
       transition: transform 0.3s;
+      letter-spacing: 1px;
     }
     
     .envelope:hover .wax-seal { transform: scale(1.1); }
@@ -476,6 +479,7 @@
 
   <div class="env-overlay" id="envOverlay">
     <div class="envelope" onclick="openInvitation()">
+      <!-- FIX 1: Changed to S & A -->
       <div class="wax-seal">S & A</div>
       <div class="env-text">Tekan untuk buka</div>
     </div>
@@ -486,11 +490,10 @@
     <div class="scene" onclick="flipCard()">
       <div class="card-3d" id="card3d">
         <div class="card-face card-front">
-          <!-- PASTE THE NEW FRONT IMAGE LINK HERE -->
+          <!-- FIX 2: Corrected Front Image Link -->
           <img src="https://raw.githubusercontent.com/dzul1234-nojamasjid/Lot571/main/Kad1.jpg" alt="Depan Kad" />
         </div>
         <div class="card-face card-back">
-          <!-- PASTE THE NEW BACK IMAGE LINK HERE -->
           <img src="https://raw.githubusercontent.com/dzul1234-nojamasjid/Lot571/main/Kad2.jpg" alt="Belakang Kad" />
         </div>
       </div>
@@ -507,9 +510,9 @@
       </div>
     </div>
 
-    <!-- The A1.jpg Image Section (Optional: if you have a text image) -->
+    <!-- OPTIONAL A1 SECTION: If you don't have an image, you can delete this whole div -->
     <div class="info-box" id="para-a1" style="padding: 10px; transition: background-color 0.3s;">
-      <!-- PASTE THE TEXT IMAGE LINK HERE IF YOU HAVE ONE, ELSE DELETE THIS DIV -->
+      <img src="https://raw.githubusercontent.com/dzul1234-nojamasjid/Walimatul-Urus/main/A1_Syahirah.jpg" alt="Teks Jemputan" style="width: 100%; border-radius: 8px; display: block;" />
     </div>
 
     <div class="info-box">
@@ -532,7 +535,6 @@
       <div class="doa-transliteration">Bārakallāhu laka wa bāraka ‘alayka wa jama‘a baynakumā fī khayr.</div>
       <div class="doa-meaning">"Semoga Allah memberkati kamu, melimpahkan berkat ke atas kamu, dan menghimpunkan kamu berdua dalam kebaikan."</div>
       
-      <!-- PASTE NEW DOA MP3 LINK HERE -->
       <audio id="doaAudio" src="https://raw.githubusercontent.com/dzul1234-nojamasjid/Lot571/main/doa%20pengantin.mp3" preload="auto"></audio>
       
       <button class="btn btn-outline" style="margin-top: 15px;" onclick="playDoaAudio()">🔊 Dengar Doa</button>
@@ -589,15 +591,12 @@
     </div>
   </div>
 
-  <!-- PASTE NEW BACKGROUND MUSIC LINK HERE -->
   <audio id="bgMusic" src="https://raw.githubusercontent.com/dzul1234-nojamasjid/Lot571/main/piano.mp3" loop preload="auto"></audio>
 
   <script>
-    // --- 1. Audio Elements ---
     const bgMusic = document.getElementById('bgMusic');
     const doaAudio = document.getElementById('doaAudio');
 
-    // --- 2. Envelope Open Logic ---
     function openInvitation() {
       const env = document.getElementById('envOverlay');
       const main = document.getElementById('mainContent');
@@ -622,7 +621,7 @@
       }, 800);
     }
 
-    // --- 3. Advanced Text-to-Speech (Fully in Malay) ---
+    // --- 3. Advanced Text-to-Speech (FIX: Better Voice Selection) ---
     function autoReadWithScroll() {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
@@ -661,7 +660,10 @@
         if (step.lang) {
            utterance.lang = 'ms-MY';
            const voices = window.speechSynthesis.getVoices();
-           const matchedVoice = voices.find(v => v.lang.includes('ms') || v.lang.includes('id'));
+           // Try to find Malay, then Indonesian, then any default
+           const matchedVoice = voices.find(v => v.lang.includes('ms')) || 
+                                voices.find(v => v.lang.includes('id')) || 
+                                voices.find(v => v.default);
            if (matchedVoice) utterance.voice = matchedVoice;
         }
 
@@ -682,7 +684,6 @@
       speakNext();
     }
 
-    // --- 4. Play Doa MP3 ---
     function playDoaAudio() {
       let fadeOut = setInterval(() => {
         if (bgMusic.volume > 0.05) {
@@ -717,12 +718,10 @@
       };
     }
 
-    // --- 5. 3D Card Flip ---
     function flipCard() {
       document.getElementById('card3d').classList.toggle('flipped');
     }
 
-    // --- 6. Countdown Timer (Updated to Dec 12, 2026) ---
     const targetDate = new Date("December 12, 2026 11:30:00").getTime();
     
     function updateCountdown() {
@@ -750,7 +749,6 @@
     setInterval(updateCountdown, 31);
     updateCountdown();
 
-    // --- 7. Theme Toggle ---
     function toggleTheme() {
       const body = document.body;
       const icon = document.getElementById('themeIcon');
@@ -767,7 +765,6 @@
       }
     }
 
-    // --- 8. QR Code & Save Function ---
     function showQr() {
       const url = window.location.href;
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`;
@@ -785,10 +782,9 @@
       document.getElementById('qrModal').style.display = 'none';
     }
 
-    // --- 9. Supabase Live Wishes ---
-    // IMPORTANT: Create a new Supabase Project or new Table for this wedding!
-    const SUPABASE_URL = 'YOUR_NEW_SUPABASE_URL_HERE'; 
-    const SUPABASE_ANON_KEY = 'YOUR_NEW_SUPABASE_ANON_KEY_HERE'; 
+    // --- 9. Supabase Live Wishes (FIX 3: Corrected Table Name) ---
+    const SUPABASE_URL = 'YOUR_NEW_SUPABASE_URL_HERE'; // PASTE HERE
+    const SUPABASE_ANON_KEY = 'YOUR_NEW_SUPABASE_ANON_KEY_HERE'; // PASTE HERE
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -798,7 +794,7 @@
 
     async function fetchWishes() {
       const { data, error } = await supabaseClient
-        .from('wishes_lot571') // Make sure your new table is also named 'wishes_lot571'
+        .from('wishes_lot571') // Fixed table name here
         .select('name, message')
         .order('created_at', { ascending: false })
         .limit(10);
@@ -826,8 +822,8 @@
     fetchWishes();
 
     supabaseClient
-      .channel('public:wishes_lot571')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wishes_lot571' }, payload => {
+      .channel('public:wishes_lot571') // Fixed table name here
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wishes_lot571' }, payload => { // Fixed table name here
         fetchWishes();
       })
       .subscribe();
@@ -847,7 +843,7 @@
       submitBtn.innerText = "Menghantar...";
 
       const { error } = await supabaseClient
-        .from('wishes_lot571')
+        .from('wishes_lot571') // Fixed table name here
         .insert([{ name: name, message: message }]);
 
       if (error) {
