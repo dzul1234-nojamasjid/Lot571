@@ -123,17 +123,16 @@
       border-top: 100px solid rgba(197, 160, 89, 0.1);
     }
 
-    /* FIX 1: Updated Wax Seal for clarity */
     .wax-seal {
       width: 60px;
       height: 60px;
       background: var(--text-accent);
       border-radius: 50%;
-      color: #ffffff; /* Changed to white */
+      color: #ffffff; 
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Playfair Display', serif; /* Changed font to a clear serif */
+      font-family: 'Playfair Display', serif; 
       font-size: 20px;
       font-weight: 600;
       z-index: 2;
@@ -479,7 +478,6 @@
 
   <div class="env-overlay" id="envOverlay">
     <div class="envelope" onclick="openInvitation()">
-      <!-- FIX 1: Changed to S & A -->
       <div class="wax-seal">S & A</div>
       <div class="env-text">Tekan untuk buka</div>
     </div>
@@ -490,7 +488,6 @@
     <div class="scene" onclick="flipCard()">
       <div class="card-3d" id="card3d">
         <div class="card-face card-front">
-          <!-- FIX 2: Corrected Front Image Link -->
           <img src="https://raw.githubusercontent.com/dzul1234-nojamasjid/Lot571/main/Kad1.jpg" alt="Depan Kad" />
         </div>
         <div class="card-face card-back">
@@ -510,7 +507,6 @@
       </div>
     </div>
 
-    <!-- OPTIONAL A1 SECTION: If you don't have an image, you can delete this whole div -->
     <div class="info-box" id="para-a1" style="padding: 10px; transition: background-color 0.3s;">
       <img src="https://raw.githubusercontent.com/dzul1234-nojamasjid/Walimatul-Urus/main/A1_Syahirah.jpg" alt="Teks Jemputan" style="width: 100%; border-radius: 8px; display: block;" />
     </div>
@@ -593,7 +589,7 @@
 
   <audio id="bgMusic" src="https://raw.githubusercontent.com/dzul1234-nojamasjid/Lot571/main/piano.mp3" loop preload="auto"></audio>
 
-    <script>
+  <script>
     const bgMusic = document.getElementById('bgMusic');
     const doaAudio = document.getElementById('doaAudio');
 
@@ -781,8 +777,15 @@
     }
 
     // --- 9. Supabase Live Wishes ---
-    const SUPABASE_URL = 'YOUR_NEW_SUPABASE_URL_HERE'; // Make sure this is correct!
-    const SUPABASE_ANON_KEY = 'YOUR_NEW_SUPABASE_ANON_KEY_HERE'; // Make sure this is correct!
+    
+    // 🔴 FIX: PASTE YOUR SUPABASE URL AND KEY HERE 🔴
+    const SUPABASE_URL = 'https://nlkjbblgtscazpvixfzz.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'sb_publishable_wO4lYkspm-68OVSNBlKSjw_8QP2UN-D'; 
+
+    // Check if they forgot to change the URL
+    if (SUPABASE_URL === 'https://YOUR_PROJECT_ID.supabase.co') {
+      console.warn("WAITING FOR YOU TO PASTE YOUR SUPABASE URL AND KEY IN THE CODE!");
+    }
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -791,6 +794,8 @@
     const wishesWall = document.getElementById('wishesWall');
 
     async function fetchWishes() {
+      if (SUPABASE_URL === 'https://YOUR_PROJECT_ID.supabase.co') return; // Skip if no keys
+
       const { data, error } = await supabaseClient
         .from('wishes_lot571') 
         .select('name, message')
@@ -819,14 +824,15 @@
 
     fetchWishes();
 
-    supabaseClient
-      .channel('public:wishes_lot571')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wishes_lot571' }, payload => {
-        fetchWishes();
-      })
-      .subscribe();
+    if (SUPABASE_URL !== 'https://YOUR_PROJECT_ID.supabase.co') {
+      supabaseClient
+        .channel('public:wishes_lot571')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wishes_lot571' }, payload => {
+          fetchWishes();
+        })
+        .subscribe();
+    }
 
-    // We use a normal function here so it doesn't conflict with the form submit
     async function handleWishSubmit(event) {
       if (event) event.preventDefault(); // FORCE STOP PAGE RELOAD
 
@@ -835,6 +841,11 @@
 
       if (!name || !message) {
         alert("Sila isi nama dan ucapan anda.");
+        return;
+      }
+
+      if (SUPABASE_URL === 'https://YOUR_PROJECT_ID.supabase.co') {
+        alert("Developer Error: Supabase URL and Key are not set yet!");
         return;
       }
 
@@ -930,4 +941,3 @@
   </script>
 </body>
 </html>
-
