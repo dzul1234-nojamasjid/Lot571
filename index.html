@@ -555,15 +555,20 @@
 
     <div class="info-box">
       <div class="section-title">Statistik Pelawat</div>
-      <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; font-size: 14px;">
+      <div style="display: flex; justify-content: center; align-items: center; gap: 30px; margin-bottom: 20px; font-size: 14px;">
+        
+        <!-- Visitor Counter -->
         <div style="text-align: center;">
           <div style="font-size: 24px; font-weight: bold; color: var(--text-accent);" id="viewCount">...</div>
           <div style="font-size: 11px; opacity: 0.8;">Jumlah Lawatan</div>
         </div>
+
+        <!-- Country Flag (Now uses an Image so it works on PC) -->
         <div style="text-align: center;">
-          <div style="font-size: 24px; font-weight: bold; color: var(--text-accent);" id="countryFlag">🌍</div>
+          <img id="countryFlagImg" src="https://flagcdn.com/w40/un.png" alt="Flag" style="height: 24px; border-radius: 3px; margin-bottom: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
           <div style="font-size: 11px; opacity: 0.8;" id="countryName">Mengesan...</div>
         </div>
+
       </div>
     </div>
 
@@ -952,48 +957,48 @@
     }
     animateLeaves();
 
-    // --- 11. Live Visitor Counter & Country Flags ---
+        // --- 11. Live Visitor Counter & Country Flags (Fixed) ---
     async function trackVisitor() {
-      // 1. Check if they already visited using a cookie
       const hasVisited = document.cookie.includes('visited_lot571=yes');
 
-      // 2. Increment Counter if they haven't visited
+      // 1. Check if they already visited
       if (!hasVisited) {
         try {
-          // Create a unique namespace for this wedding
-          const counterRes = await fetch('https://api.counterapi.dev/v1/dzul_lot571/wedding_views/up');
+          // Using a more reliable free counter API (CountAPI.xyz)
+          const counterRes = await fetch('https://api.countapi.xyz/hit/dzul_lot571/wedding_views');
           const counterData = await counterRes.json();
-          document.getElementById('viewCount').innerText = counterData.count;
+          document.getElementById('viewCount').innerText = counterData.value;
           
           // Set cookie so we don't count them again (expires in 1 day)
           document.cookie = "visited_lot571=yes; max-age=86400; path=/";
         } catch (e) {
+          console.error("Counter Error:", e);
           document.getElementById('viewCount').innerText = "1+";
         }
       } else {
         // If they already visited, just get the current count without adding 1
         try {
-          const counterRes = await fetch('https://api.counterapi.dev/v1/dzul_lot571/wedding_views');
+          const counterRes = await fetch('https://api.countapi.xyz/get/dzul_lot571/wedding_views');
           const counterData = await counterRes.json();
-          document.getElementById('viewCount').innerText = counterData.count;
+          document.getElementById('viewCount').innerText = counterData.value;
         } catch (e) {
           document.getElementById('viewCount').innerText = "1+";
         }
       }
 
-      // 3. Get Visitor Country & Flag
+      // 2. Get Visitor Country & Flag (Using FlagCDN for PC compatibility)
       try {
         const geoRes = await fetch('https://ipapi.co/json/');
         const geoData = await geoRes.json();
         
-        // Convert Country Code to Flag Emoji (e.g., "MY" -> 🇲🇾)
-        const countryCode = geoData.country_code;
-        const flagEmoji = countryCode.replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
+        // Convert Country Code to lowercase for the image URL (e.g., "SG" -> "sg")
+        const countryCode = geoData.country_code.toLowerCase();
         
-        document.getElementById('countryFlag').innerText = flagEmoji;
+        // Update the image source and the country name
+        document.getElementById('countryFlagImg').src = `https://flagcdn.com/w40/${countryCode}.png`;
         document.getElementById('countryName').innerText = geoData.country_name;
       } catch (e) {
-        document.getElementById('countryFlag').innerText = "🌍";
+        document.getElementById('countryFlagImg').src = `https://flagcdn.com/w40/un.png`;
         document.getElementById('countryName').innerText = "Unknown";
       }
     }
