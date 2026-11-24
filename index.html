@@ -559,11 +559,11 @@
         
         <!-- Visitor Counter -->
         <div style="text-align: center;">
-          <div style="font-size: 24px; font-weight: bold; color: var(--text-accent);" id="viewCount">...</div>
+          <div style="font-size: 24px; font-weight: bold; color: var(--text-accent);" id="supabaseViews">...</div>
           <div style="font-size: 11px; opacity: 0.8;">Jumlah Lawatan</div>
         </div>
 
-        <!-- Country Flag (Now uses an Image so it works on PC) -->
+        <!-- Country Flag -->
         <div style="text-align: center;">
           <img id="countryFlagImg" src="https://flagcdn.com/w40/un.png" alt="Flag" style="height: 24px; border-radius: 3px; margin-bottom: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
           <div style="font-size: 11px; opacity: 0.8;" id="countryName">Mengesan...</div>
@@ -957,49 +957,64 @@
     }
     animateLeaves();
 
-        // --- 11. Live Visitor Counter & Country Flags (Fixed) ---
+    // --- 11. Live Visitor Counter & Country Flags (Supabase Version) ---
     async function trackVisitor() {
-      const hasVisited = document.cookie.includes('visited_lot571=yes');
-
-      // 1. Check if they already visited
-      if (!hasVisited) {
-        try {
-          // Using a more reliable free counter API (CountAPI.xyz)
-          const counterRes = await fetch('https://api.countapi.xyz/hit/dzul_lot571/wedding_views');
-          const counterData = await counterRes.json();
-          document.getElementById('viewCount').innerText = counterData.value;
-          
-          // Set cookie so we don't count them again (expires in 1 day)
-          document.cookie = "visited_lot571=yes; max-age=86400; path=/";
-        } catch (e) {
-          console.error("Counter Error:", e);
-          document.getElementById('viewCount').innerText = "1+";
-        }
-      } else {
-        // If they already visited, just get the current count without adding 1
-        try {
-          const counterRes = await fetch('https://api.countapi.xyz/get/dzul_lot571/wedding_views');
-          const counterData = await counterRes.json();
-          document.getElementById('viewCount').innerText = counterData.value;
-        } catch (e) {
-          document.getElementById('viewCount').innerText = "1+";
-        }
-      }
-
-      // 2. Get Visitor Country & Flag (Using FlagCDN for PC compatibility)
+      // 1. Country Flag Detection (This part was working perfectly)
       try {
         const geoRes = await fetch('https://ipapi.co/json/');
         const geoData = await geoRes.json();
-        
-        // Convert Country Code to lowercase for the image URL (e.g., "SG" -> "sg")
         const countryCode = geoData.country_code.toLowerCase();
-        
-        // Update the image source and the country name
         document.getElementById('countryFlagImg').src = `https://flagcdn.com/w40/${countryCode}.png`;
         document.getElementById('countryName').innerText = geoData.country_name;
       } catch (e) {
         document.getElementById('countryFlagImg').src = `https://flagcdn.com/w40/un.png`;
         document.getElementById('countryName').innerText = "Unknown";
+      }
+
+      // 2. Supabase View Counter
+      // We only count if there's no cookie
+      const hasVisited = document.cookie.includes('visited_lot571=yes');
+      
+      try {
+        if (!hasVisited) {
+          // 1. Get the current count
+          const { data, error } = await supabaseClient
+            .from('views')
+            .select('count')
+            .eq('id', 1)
+            .single();
+
+          if (data && !error) {
+            const newCount = data.count + 1;
+            
+            // 2. Update the count
+            await supabaseClient
+              .from('views')
+              .update({ count: newCount })
+              .eq('id', 1);
+              
+            document.getElementById('supabaseViews').innerText = newCount;
+            
+            // 3. Set cookie so we don't count them again for 1 day
+            document.cookie = "visited_lot571=yes; max-age=86400; path=/";
+          }
+        } else {
+          // If they already have the cookie, just fetch the number
+          const { data, error } = await supabaseClient
+            .from('views')
+            .select('count')
+            .eq('id', 1)
+            .single();
+            
+          if (data && !error) {
+            document.getElementById('supabaseViews').innerText = data.count;
+          } else {
+             document.getElementById('supabaseViews').innerText = "1+";
+          }
+        }
+      } catch (e) {
+        console.error("Supabase Counter Error:", e);
+        document.getElementById('supabaseViews').innerText = "1+";
       }
     }
 
