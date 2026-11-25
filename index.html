@@ -10,9 +10,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
 
-  <!-- Supabase Library -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <style>
     /* Default is Dark Mode */
     :root {
@@ -521,8 +518,8 @@
       <div class="venue-address" id="para-address">Mukim Legong Ulu<br>71350 Kota, Negeri Sembilan</div>
 
       <a href="https://www.google.com/maps/place/2%C2%B030'41.8%22N+102%C2%B008'36.8%22E/@2.5116111,102.1435556,17z/data=!3m1!4b1!4m4!3m3!8m2!3d2.5116111!4d102.1435556?entry=ttu&g_ep=EgoyMDI2MTExOC4xIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-  📍 Buka Google Maps
-</a>
+        📍 Buka Google Maps
+      </a>
     </div>
 
     <div class="info-box" id="doa-section">
@@ -609,6 +606,9 @@
   <audio id="bgMusic" src="https://raw.githubusercontent.com/dzul1234-nojamasjid/Lot571/main/piano.mp3" loop preload="auto"></audio>
 
   <script>
+    // --- 0. Cloudflare Worker Endpoint (No Supabase credentials exposed!) ---
+    const WORKER_URL = 'https://syahirah-abid.dzul1234.workers.dev';
+
     const bgMusic = document.getElementById('bgMusic');
     const doaAudio = document.getElementById('doaAudio');
 
@@ -672,21 +672,21 @@
         utterance.rate = 0.9;
         
         if (step.lang) {
-           utterance.lang = 'ms-MY';
-           const voices = window.speechSynthesis.getVoices();
-           const matchedVoice = voices.find(v => v.lang.includes('ms')) || 
-                                voices.find(v => v.lang.includes('id')) || 
-                                voices.find(v => v.default);
-           if (matchedVoice) utterance.voice = matchedVoice;
+          utterance.lang = 'ms-MY';
+          const voices = window.speechSynthesis.getVoices();
+          const matchedVoice = voices.find(v => v.lang.includes('ms')) || 
+                               voices.find(v => v.lang.includes('id')) || 
+                               voices.find(v => v.default);
+          if (matchedVoice) utterance.voice = matchedVoice;
         }
 
         utterance.onend = () => {
           currentIndex++;
           if (currentIndex < steps.length && steps[currentIndex].id !== step.id) {
-             if (el) el.classList.remove('reading-active');
+            if (el) el.classList.remove('reading-active');
           }
           if (currentIndex >= steps.length && el) {
-             el.classList.remove('reading-active');
+            el.classList.remove('reading-active');
           }
           speakNext();
         };
@@ -795,65 +795,48 @@
       document.getElementById('qrModal').style.display = 'none';
     }
 
-    // --- 9. Supabase Live Wishes ---
-    
-    // 🔴 FIX: PASTE YOUR SUPABASE URL AND KEY HERE 🔴
-    const SUPABASE_URL = 'https://nlkjbblgtscazpvixfzz.supabase.co'; 
-    const SUPABASE_ANON_KEY = 'sb_publishable_wO4lYkspm-68OVSNBlKSjw_8QP2UN-D'; 
-
-    // Check if they forgot to change the URL
-    if (SUPABASE_URL === 'https://YOUR_PROJECT_ID.supabase.co') {
-      console.warn("WAITING FOR YOU TO PASTE YOUR SUPABASE URL AND KEY IN THE CODE!");
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
     }
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    // --- 9. Live Wishes (via Cloudflare Worker) ---
     const form = document.getElementById('wishForm');
     const submitBtn = document.getElementById('submitWishBtn');
     const wishesWall = document.getElementById('wishesWall');
 
     async function fetchWishes() {
-      if (SUPABASE_URL === 'https://YOUR_PROJECT_ID.supabase.co') return; // Skip if no keys
+      try {
+        const res = await fetch(`${WORKER_URL}/api/wishes`);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
 
-      const { data, error } = await supabaseClient
-        .from('wishes_lot571') 
-        .select('name, message')
-        .order('created_at', { ascending: false })
-        .limit(10);
+        if (!Array.isArray(data) || data.length === 0) {
+          wishesWall.innerHTML = '<div style="text-align: center; opacity: 0.5;">Belum ada ucapan. Jadilah yang pertama!</div>';
+          return;
+        }
 
-      if (error) {
+        wishesWall.innerHTML = data.map(w => `
+          <div style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+            <strong style="color: var(--text-accent);">${escapeHtml(w.name)}:</strong> ${escapeHtml(w.message)}
+          </div>
+        `).join('');
+
+        wishesWall.scrollTop = wishesWall.scrollHeight;
+      } catch (error) {
         console.error('Error fetching wishes:', error);
         wishesWall.innerHTML = '<div style="text-align: center; color: red;">Gagal memuatkan ucapan.</div>';
-        return;
       }
-
-      if (data.length === 0) {
-        wishesWall.innerHTML = '<div style="text-align: center; opacity: 0.5;">Belum ada ucapan. Jadilah yang pertama!</div>';
-        return;
-      }
-
-      wishesWall.innerHTML = data.map(w => `
-        <div style="margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
-          <strong style="color: var(--text-accent);">${w.name}:</strong> ${w.message}
-        </div>
-      `).join('');
-
-      wishesWall.scrollTop = wishesWall.scrollHeight;
     }
 
     fetchWishes();
-
-    if (SUPABASE_URL !== 'https://YOUR_PROJECT_ID.supabase.co') {
-      supabaseClient
-        .channel('public:wishes_lot571')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wishes_lot571' }, payload => {
-          fetchWishes();
-        })
-        .subscribe();
-    }
+    setInterval(fetchWishes, 8000);
 
     async function handleWishSubmit(event) {
-      if (event) event.preventDefault(); // FORCE STOP PAGE RELOAD
+      if (event) event.preventDefault();
 
       const name = document.getElementById('wishName').value.trim();
       const message = document.getElementById('wishText').value.trim();
@@ -863,28 +846,28 @@
         return;
       }
 
-      if (SUPABASE_URL === 'https://YOUR_PROJECT_ID.supabase.co') {
-        alert("Developer Error: Supabase URL and Key are not set yet!");
-        return;
-      }
-
       submitBtn.disabled = true;
       submitBtn.innerText = "Menghantar...";
 
-      const { error } = await supabaseClient
-        .from('wishes_lot571')
-        .insert([{ name: name, message: message }]);
+      try {
+        const res = await fetch(`${WORKER_URL}/api/wishes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, message })
+        });
 
-      if (error) {
-        alert("Maaf! Terdapat masalah semasa menghantar ucapan. Sila cuba lagi.");
-        console.error("SUPABASE ERROR:", error); // This will show in the browser console
-      } else {
+        if (!res.ok) throw new Error('Failed to post wish');
+
         alert("Terima kasih! Ucapan anda telah dihantar.");
         form.reset();
+        await fetchWishes();
+      } catch (error) {
+        alert("Maaf! Terdapat masalah semasa menghantar ucapan. Sila cuba lagi.");
+        console.error("WORKER ERROR:", error);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Hantar Ucapan";
       }
-
-      submitBtn.disabled = false;
-      submitBtn.innerText = "Hantar Ucapan";
     }
 
     form.addEventListener('submit', handleWishSubmit);
@@ -957,70 +940,42 @@
     }
     animateLeaves();
 
-    // --- 11. Live Visitor Counter & Country Flags (Supabase Version) ---
+    // --- 11. Live Visitor Counter & Country Flags (via Cloudflare Worker) ---
     async function trackVisitor() {
-      // 1. Country Flag Detection (This part was working perfectly)
       try {
         const geoRes = await fetch('https://ipapi.co/json/');
         const geoData = await geoRes.json();
-        const countryCode = geoData.country_code.toLowerCase();
+        const countryCode = (geoData.country_code || 'un').toLowerCase();
         document.getElementById('countryFlagImg').src = `https://flagcdn.com/w40/${countryCode}.png`;
-        document.getElementById('countryName').innerText = geoData.country_name;
+        document.getElementById('countryName').innerText = geoData.country_name || 'Unknown';
       } catch (e) {
         document.getElementById('countryFlagImg').src = `https://flagcdn.com/w40/un.png`;
         document.getElementById('countryName').innerText = "Unknown";
       }
 
-      // 2. Supabase View Counter
-      // We only count if there's no cookie
       const hasVisited = document.cookie.includes('visited_lot571=yes');
-      
-      try {
-        if (!hasVisited) {
-          // 1. Get the current count
-          const { data, error } = await supabaseClient
-            .from('views')
-            .select('count')
-            .eq('id', 1)
-            .single();
+      const method = hasVisited ? 'GET' : 'POST';
 
-          if (data && !error) {
-            const newCount = data.count + 1;
-            
-            // 2. Update the count
-            await supabaseClient
-              .from('views')
-              .update({ count: newCount })
-              .eq('id', 1);
-              
-            document.getElementById('supabaseViews').innerText = newCount;
-            
-            // 3. Set cookie so we don't count them again for 1 day
+      try {
+        const res = await fetch(`${WORKER_URL}/api/views`, { method });
+        if (!res.ok) throw new Error('Views response not ok');
+        const data = await res.json();
+
+        if (typeof data.count === 'number') {
+          document.getElementById('supabaseViews').innerText = data.count;
+          if (!hasVisited) {
             document.cookie = "visited_lot571=yes; max-age=86400; path=/";
           }
         } else {
-          // If they already have the cookie, just fetch the number
-          const { data, error } = await supabaseClient
-            .from('views')
-            .select('count')
-            .eq('id', 1)
-            .single();
-            
-          if (data && !error) {
-            document.getElementById('supabaseViews').innerText = data.count;
-          } else {
-             document.getElementById('supabaseViews').innerText = "1+";
-          }
+          document.getElementById('supabaseViews').innerText = "1+";
         }
       } catch (e) {
-        console.error("Supabase Counter Error:", e);
+        console.error("Worker Counter Error:", e);
         document.getElementById('supabaseViews').innerText = "1+";
       }
     }
 
-    // Call the function when the page loads
     trackVisitor();
-
   </script>
 </body>
 </html>
